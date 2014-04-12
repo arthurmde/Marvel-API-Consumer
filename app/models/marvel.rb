@@ -13,4 +13,11 @@ class Marvel
     response_body = JSON.parse(response.body)
     results = response_body['data']['results']
   end
+
+  def self.comic(id)
+    response = self.get("/v1/public/comics/#{id}?ts=#{MarvelParameters.timestamp}&apikey=#{MarvelParameters.public_key}&hash=#{MarvelParameters.digest}")
+    response_body = JSON.parse(response.body)
+    puts "RESPONSE BODY: #{response_body}"
+    results = response_body['data']['results'][0]
+  end
 end
