@@ -14,4 +14,8 @@ class MarvelParameters
   def self.digest
     Digest::MD5.hexdigest( "#{timestamp}#{private_key}#{public_key}" )     
   end
+
+  def self.credentials
+    "ts=#{MarvelParameters.timestamp}&apikey=#{MarvelParameters.public_key}&hash=#{MarvelParameters.digest}"
+  end
 end
