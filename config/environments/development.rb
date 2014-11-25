@@ -1,5 +1,8 @@
 TestMarvelApi::Application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
+  
+  ENV['MARVEL_PUBLIC_KEY'] = "4c4755780967752eecf76c08e8a89533"
+  ENV['MARVEL_PRIVATE_KEY'] = "7e36b1e8b02e3d71cfb140dffc5fbaea3ee22329"
 
   # In the development environment your application's code is reloaded on
   # every request. This slows down response time but is perfect for development
