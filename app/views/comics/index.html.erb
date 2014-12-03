@@ -1,6 +1,0 @@
-<% @comics.each do |comic| %>
-  <div><%= image_tag comic.thumbnail + '.jpg' %></div>
-  <div><%= comic.title %></div>
-  <div><%= comic.description %></div>
-  <div><%= link_to comic.url, comic.url  %></div>
-<% end %>

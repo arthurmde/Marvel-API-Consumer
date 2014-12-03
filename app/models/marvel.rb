@@ -4,34 +4,60 @@ class Marvel
   base_uri 'gateway.marvel.com:80'
 
   def self.character(id)
-    response = 
+    response =
         self.get("/v1/public/characters/#{id}?#{MarvelParameters.credentials}")
     response_body = JSON.parse(response.body)
-    results = response_body['data']['results'][0]    
+    results = response_body['data']['results'][0]
   end
 
   def self.import_characters
     characters = Marvel.characters_list
-    Character.destroy_all
 
     characters.each do |key, value|
       response = self.get("/v1/public/characters/#{key.to_s}?&#{MarvelParameters.credentials}")
       response_body = JSON.parse(response.body)
+      if !response_body.nil? && !response_body['data'].nil? && !response_body['data']['results'].nil?
+        results = response_body['data']['results']
+
+        results.each do |result|
+          character = Character.new
+
+          thumbnail = result['thumbnail']
+          character.thumbnail = thumbnail.blank? ? "" : thumbnail['path']
+          character.character_id = result['id']
+          character.name = result['name']
+          character.description = result['description']
+          character.events_uri = result['events']['collectionURI']
+
+          character.save!
+
+          puts "="*100, Character.last.inspect, "="*100
+        end
+      end
+    end
+  end
+
+  def self.import_characters_events
+    Character.all.each do |character|
+      response = self.get("/v1/public/characters/#{character.character_id}/events?limit=100&#{MarvelParameters.credentials}")
+      response_body = JSON.parse(response.body)
       results = response_body['data']['results']
-      
+
       results.each do |result|
-        character = Character.new
+        event = Event.where(:event_id => result['id']).first
+        if event.blank?
+          event = Event.new
 
-        thumbnail = result['thumbnail']
-        character.thumbnail = thumbnail.blank? ? "" : thumbnail['path']
-        character.character_id = result['id']
-        character.name = result['name']
-        character.description = result['description']
-        character.events_uri = result['events']['collectionURI']
+          thumbnail = result['thumbnail']
+          event.thumbnail = thumbnail.blank? ? "" : thumbnail['path']
+          event.event_id = result['id']
+          event.name = result['title']
+          event.description = result['description']
 
-        character.save!
+          event.save!
+        end
 
-         puts "="*100, Character.last.inspect, "="*100
+        character.event_characters.create(event: event)
       end
     end
   end
@@ -43,20 +69,44 @@ class Marvel
   end
 
   def self.comic(id)
-    response = 
+    response =
         self.get("/v1/public/comics/#{id}?#{MarvelParameters.credentials}")
     response_body = JSON.parse(response.body)
     puts "RESPONSE BODY: #{response_body}"
     results = response_body['data']['results'][0]
-
-
   end
 
   def self.all_comics
-    response = 
+    response =
         self.get("/v1/public/comics?#{MarvelParameters.credentials}")
     response_body = JSON.parse(response.body)
-    results = response_body['data']['results']    
+    results = response_body['data']['results']
+  end
+
+  def self.write_characters_node
+    file = File.new("characters.txt", "w")
+
+    Character.all.each do |character|
+      file.puts character.character_id.to_s
+      file.puts character.name
+    end
+
+    file.close
+  end
+
+  def self.write_events
+    file = File.new("events.txt", "w")
+
+    Event.all.each do |event|
+      file.puts event.event_id.to_s
+      file.puts event.name
+      file.puts event.characters.count.to_s
+      event.characters.all.each do |character|
+        file.puts character.character_id.to_s
+      end
+    end
+
+    file.close
   end
 
   private
@@ -98,7 +148,7 @@ class Marvel
     characters[1009167] = "Bruce Banner"
     characters[1009211] = "Bucky"
     characters[1009212] = "Bullseye"
-    
+
     characters[1009214] = "Cable"
     characters[1009220] = "Captain America"
     characters[1010338] = "Captain Marvel (Carol Danvers)"
@@ -241,7 +291,7 @@ class Marvel
     characters[1009663] = "Venom (Flash Thompson)"
     characters[1010788] = "Venom (Mac Gargan)"
     characters[1009697] = "Vision"
-   
+
     characters[1009711] = "Whiplash (Mark Scarlotti)"
     characters[1010740] = "Winter Soldier"
     characters[1009718] = "Wolverine"
